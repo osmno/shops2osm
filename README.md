@@ -4,7 +4,7 @@ Tools for converting shops and fuel stations to osm.xml
 
 ## ref_update
 
-Using input osm file, loads objects from OSM and generates osm file with updated tags based.
+Loads objects from OSM and generates osm file with updated tags and objects based on given input file.
 
 Usage: <code>python ref_update.py <input_file.osm></code>
 
