@@ -1,6 +1,8 @@
 # shops2osm
 Tools for converting shops and fuel stations to osm.xml
 
+Tools and OSM files for importing/updating stores and fuel stations in Norway [here](https://drive.google.com/drive/folders/1pX27_uns1lIsxKvKxaChmtobH25HpJvN)
+
 
 ## ref_update
 
