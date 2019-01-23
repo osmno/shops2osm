@@ -10,7 +10,7 @@
 # Usage: python update_ref.py [input_filename.osm]
 # Input file name must end with .osm
 # Output file name is appended with "_update.osm"
-# Detailed log file: "update_log.txt"
+# Detailed log file: "_update_log.txt" + date
 
 
 import json
@@ -18,12 +18,13 @@ import sys
 import urllib
 import urllib2
 import copy
+import time
 from xml.etree import ElementTree
 
 
-version = "0.1.0"
+version = "0.2.0"
 
-header = {"User-Agent": "update_ref/" + version}
+header = {"User-Agent": "osm-no/update_ref/" + version}
 
 
 escape_characters = {
@@ -120,17 +121,18 @@ if __name__ == '__main__':
 	# Read all data into memory
 	
 	if len(sys.argv) == 2:
-		input_filename = sys.argv[1]
+		input_filename = sys.argv[1].lower()
 	else:
 		message ("Input filename.osm missing\n")
 		sys.exit()
 
 	if input_filename.find(".osm") >= 0:
-		out_filename = input_filename.replace(".osm", "_update.osm")
+		out_filename = input_filename.replace(".osm", "") + "_update.osm"
 	else:
 		out_filename = input_filename + "_update"
 
-	log_filename = "update_log.txt"
+	today_date = time.strftime("%Y-%m-%d", time.localtime())
+	log_filename = input_filename.replace(".osm", "") + "_update_log_" + today_date +  ".txt"
 
 
 	# First loop all input nodes to copy data and produce tag inventory
@@ -170,7 +172,11 @@ if __name__ == '__main__':
 		input_elements.append(entry)
 
 	message ("\nUpdating elements with '%s'\n" % ref_key)
-	message ("%i elements in input file (%i with ref: key)\n" % (len(input_elements), ref_input_count))
+	message ("%i elements in input file" % len(input_elements))
+	if ref_input_count < len(input_elements):
+		message (" (%i with %s key)\n" % (ref_input_count, ref_key))
+	else:
+		message ("\n")
 
 	if not(ref_key):
 		message ("*** No ref: key found\n")
@@ -180,7 +186,7 @@ if __name__ == '__main__':
 	# Get all existing object from Overpass
 
 	message ("Loading from Overpass... ")
-	query = '[out:json][timeout:60];(area[admin_level=2][name=Norge];)->.a;(nwr["%s"](area.a););(._;>;);out meta;' % ref_key
+	query = '[out:json][timeout:60];(area[admin_level=2][name=Norge];)->.a;(nwr["%s"](area.a););(._;<;>;);out meta;' % ref_key
 	request = urllib2.Request('https://overpass-api.de/api/interpreter?data=' + urllib.quote(query), headers=header)
 	file = urllib2.urlopen(request)
 	osm_data = json.load(file)
@@ -191,12 +197,16 @@ if __name__ == '__main__':
 		if ("tags" in element) and (ref_key in element['tags']):
 			ref_osm_count += 1
 
-	message ("\n%i elements in OSM with %s\n" % (ref_osm_count, ref_key))
+	message ("\n%i elements in OSM with %s" % (ref_osm_count, ref_key))
+	if len(osm_data['elements']) > ref_osm_count:
+		message (", + %i connected elements\n" % (len(osm_data['elements']) - ref_osm_count))
+	else:
+		message ("\n")
 
 	# Loop through all elements in input file and compare with osm data
 
 	log_file = open(log_filename, "w")
-	log_file.write("%s\n" % input_filename)
+	log_file.write("Log file for updating %s file on %s \n" % (input_filename, today_date))
 
 	updated = 0
 	added = 0
@@ -236,9 +246,13 @@ if __name__ == '__main__':
 																					input_element['tags'][key].encode("utf-8")))
 
 						elif prefix_key in input_keys:  # Tag not found, and to be deleted if within scope of input tags
-							del new_tags[key]
-							modified = True
-							log_file.write ("    Deleted:  %s='%s'\n" % (key.encode("utf-8"), value.encode("utf-8")))
+							if not(("brand" in input_element['tags']) and (input_element['tags']['brand'] == "YX 7-Eleven") and\
+									(key in ['ref:7eleven', 'ref:yx', 'phone', 'email'])):  # Keep 4 tags for YX/7-Eleven stations
+								del new_tags[key]
+								modified = True
+								log_file.write ("    Deleted:  %s='%s'\n" % (key.encode("utf-8"), value.encode("utf-8")))
+							else:
+								log_file.write ("    Keep:     %s='%s'  (YX/7-Eleven)\n" % (key.encode("utf-8"), value.encode("utf-8")))
 
 					# Add new tags to osm element
 
@@ -282,7 +296,7 @@ if __name__ == '__main__':
 			osm_element['tags']['NOT_FOUND'] = "yes"
 			osm_element['modify'] = True
 			not_found += 1
-			log_file.write ("\nOSM OBJECT NOT FOUND IN INPUT FILE:\n")
+			log_file.write ("\nOBJECT IN OSM NOT FOUND IN INPUT FILE:\n")
 			for key, value in osm_element['tags'].iteritems():
 				log_file.write ("    %s='%s'\n" % (key.encode("utf-8"), value.encode("utf-8")))
 
@@ -303,5 +317,5 @@ if __name__ == '__main__':
 	message ("\nSummary of changes written to output file %s:\n" % out_filename)
 	message ("  Updated:  %i\n" % updated)
 	message ("  Added:    %i\n" % added)
-	message ("  No match: %i (OSM object with %s not found in input file)\n" % (not_found, ref_key))
-	message ("Details in log file %s\n\n" % log_filename)
+	message ("  No match: %i (objects in OSM with %s not found in input file)\n" % (not_found, ref_key))
+	message ("\nDetails in log file %s\n\n" % log_filename)
