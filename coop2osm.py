@@ -4,7 +4,7 @@
 # coop2osm
 # Converts Coop stores from Coop API or JSON file to OSM format for import/update
 # Usage: python coop2osm.py [input_filename.json] > output_filename.osm
-# Loads data from Coop API unless input file  is given
+# Loads data from Coop API
 # Loads postal codes from POsten/Bring and municipality codes from Kartverket/Geonorge
 
 
@@ -16,7 +16,7 @@ import re
 import urllib2
 
 
-version = "0.3.0"
+version = "0.4.0"
 
 brands = {
 	'hyper': {'name': 'Obs', 'shop': 'supermarket'},
@@ -84,26 +84,26 @@ def make_osm_line(key,value):
 if __name__ == '__main__':
 
 	# Read all data into memory
+	# Two parts to limit number of stores per call, divded at latitude 65
 
-	if len(sys.argv) > 1:
-		filename = sys.argv[1]
+	header = {
+		"X-Requested-With": "XMLHttpRequest",
+		"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
+		}
 
-		with open(filename) as file:
-			store_data = json.load(file)
-			file.close()
+	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=65.0&lonNw=4.0&latSe=57.0&lonSe=32.0&chainId=999"
 
-	else:
+	request = urllib2.Request(link, headers=header)
+	file = urllib2.urlopen(request)
+	store_data1 = json.load(file)
+	file.close()
 
-		link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59&locationLon=10&latNw=73&lonNw=0&latSe=56&lonSe=37&chainId=999"
-		header = {
-			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
-			"X-Requested-With": "XMLHttpRequest"
-			}
+	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=72.0&lonNw=4.0&latSe=65.0&lonSe=32.0&chainId=999"
 
-		request = urllib2.Request(link, headers=header)
-		file = urllib2.urlopen(request)
-		store_data = json.load(file)
-		file.close()
+	request = urllib2.Request(link, headers=header)
+	file = urllib2.urlopen(request)
+	store_data2 = json.load(file)
+	file.close()
 
 	# Read county names
 
@@ -133,9 +133,9 @@ if __name__ == '__main__':
 
 	node_id = -1000
 
-	# Loop through all stores and produce OSM tags
+	# Iterate all stores and produce OSM tags
 
-	for store in store_data:
+	for store in store_data1 + store_data2:
 
 		node_id -= 1
 		brand = brands[store['ChainClassName']]
@@ -176,7 +176,9 @@ if __name__ == '__main__':
 					make_osm_line('service:postnord', 'yes')
 				elif service == 'toto':
 					make_osm_line('service:rikstoto', 'yes')
-				else:
+				elif service == "electric":
+					make_osm_line('service:charging', 'yes')
+				elif service != 'memberoffer':
 					make_osm_line('service:' + service, 'yes')
 
 
@@ -187,7 +189,7 @@ if __name__ == '__main__':
 
 		for day in store['OpeningHours']:
 			if not(day['Closed']):
-				hours[days.index(day['Weekday'])] = day['OpenString'].replace("-00:00", "-24:00")
+				hours[days.index(day['Weekday'])] = day['OpenString'][0:5] + day['OpenString'][8:14].replace("-00:00", "-24:00")
 
 		# Loop through all sequences of opening hours to simplify
 
