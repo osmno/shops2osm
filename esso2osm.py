@@ -15,7 +15,7 @@ import csv
 import urllib2
 import sys
 
-version = "0.3.0"
+version = "0.4.0"
 
 services = [
 	('Bilvask', 'car_wash'),
@@ -174,7 +174,7 @@ if __name__ == '__main__':
 					if (part.find(" -") < 0) and (part.find("stengt") < 0):
 						for day in range(7):
 							part = part.replace(days[day], short_days[day])
-						opening_hours = opening_hours + part.replace("-00:00","-24:00") + ", "
+						opening_hours = opening_hours + part.replace("-00:00","-24:00").replace(u"Døgnåpent", "00:00-24:00") + ", "
 				opening_hours = opening_hours.rstrip(", ")
 
 			make_osm_line("opening_hours", opening_hours)
