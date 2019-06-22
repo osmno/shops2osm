@@ -15,7 +15,7 @@ import urllib2
 from bs4 import BeautifulSoup
 
 
-version = "0.3.0"
+version = "0.4.0"
 
 services = {
 	'AdBlue': 'fuel:adblue',
@@ -93,6 +93,8 @@ if __name__ == '__main__':
 		store_data = datasoup.find('body').find(class_='page').find('main').find('div').find('div').find('div').find('section')['data-stations']
 		store_data = json.loads(store_data.replace("&quot;",'"').replace("&amp;","&"))
 
+	refs = []
+
 	# Produce OSM file header
 
 	print ('<?xml version="1.0" encoding="UTF-8"?>')
@@ -134,10 +136,18 @@ if __name__ == '__main__':
 
 		branch = name.replace("YX ","").replace("Uno-X ","").replace("Truck ","")
 
+		# Avoid duplicate refs
+
+		ref = str(store['id'])
+		if ref in refs:
+			ref += "B"
+		else:
+			refs.append(ref)
+
 		# Produce station tags
 
 		make_osm_line("amenity", "fuel")
-		make_osm_line("ref:yx", str(store['id']))
+		make_osm_line("ref:yx", ref)
 		make_osm_line("name", name)
 		make_osm_line("branch", branch)
 		make_osm_line("brand", brand)
