@@ -15,7 +15,7 @@ import csv
 import urllib2
 import sys
 
-version = "0.4.0"
+version = "0.5.0"
 
 services = [
 	('Bilvask', 'car_wash'),
@@ -106,19 +106,24 @@ if __name__ == '__main__':
 
 	for store in store_data:
 
-		node_id -= 1
+		if store['LocationID'] != "100358172":  # Office, not fuel station
 
-		if store['DisplayName']:
+			node_id -= 1
 
 			print('  <node id="%i" lat="%f" lon="%f">' % (node_id, store['Latitude'], store['Longitude']))
 
 			# Produce station tags
 
-			name = store['DisplayName'].encode("utf-8").decode("utf-8")
-			name = name.replace("2","").replace("3","").title()
+			if store['DisplayName']:
+				name = store['DisplayName'].encode("utf-8").decode("utf-8")
+				name = name.replace("2","").replace("3","").title()
+			elif store['LocationID'] == "100356373":
+				name = "Grubhei"
+			else:
+				name = ""
 
 			make_osm_line("amenity", "fuel")
-			make_osm_line("ref:esso", str(store['LocationID']))
+			make_osm_line("ref:esso", store['LocationID'])
 			make_osm_line("name", "Esso " + name)
 			make_osm_line("branch", name)
 			make_osm_line("brand", "Esso")
@@ -134,7 +139,6 @@ if __name__ == '__main__':
 
 			for service in store['StoreAmenities'] + store['FeaturedItems']:
 				service_name = service['Name'].encode("utf-8").decode("utf-8")
-#				make_osm_line ("service:" + service_name, "yes")
 				service_debug.append(service_name)
 
 				for service_test in services:
@@ -189,7 +193,7 @@ if __name__ == '__main__':
 
 			print('  </node>')
 
-
 	# Produce OSM file footer
 
 	print('</osm>')
+	
