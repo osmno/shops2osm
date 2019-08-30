@@ -2,9 +2,8 @@
 # -*- coding: utf8
 
 # shell2osm
-# Converts Shell/St1 stores from St1 json file to osm format for import/update
+# Converts Shell/St1 stores from St1 api to osm format for import/update
 # Usage: shell2osm [input_filename.json] > output_filename.osm
-# Default file name is st1.json, copied from Shell/St1 web page
 # Reads postal/municipality codes from Posten, and county names from Kartverket
 
 
@@ -17,12 +16,18 @@ import urllib2
 from datetime import datetime
 
 
-version = "0.2.0"
+version = "0.4.0"
 
-countries = {
-	'norway': '+47',
-	'sweden': '+46',
-	'finland': '+358'
+country_name = {
+	'no': 'Norway',
+	'se': 'Sweden',
+	'fi': 'Finland'
+}
+
+country_prefix = {
+	'Norway': '+47',
+	'Sweden': '+46',
+	'Finland': '+358'
 }
 
 fuels = [
@@ -88,18 +93,6 @@ def make_osm_line(key,value):
 		print ('    <tag k="' + key + '" v="' + encoded_value + '" />')
 
 
-# Fetch country from string
-
-def get_country(code):
-
-	global station_country
-	global countries
-
-	for country in countries:
-		if code.find(country) >= 0:
-			station_country = country
-
-
 # Main program
 
 if __name__ == '__main__':
@@ -107,8 +100,6 @@ if __name__ == '__main__':
 	debug = True
 
 	# Read all data into memory
-	
-#	filename = "st1.json"
 
 	if len(sys.argv) > 1:
 		filename = sys.argv[1]
@@ -171,7 +162,7 @@ if __name__ == '__main__':
 
 	for store in store_data['stations']:
 
-		if len(store['postcode']) == 4:  # Norwegian stations
+		if store['brand'] and (store['countryCode'] == "no"):  # No depots, only Norwegian stations
 
 			node_id -= 1
 
@@ -189,7 +180,7 @@ if __name__ == '__main__':
 					name = name.replace(word[0], word[1])
 
 			branch = name.replace(store['brand'],"").replace("Automaatti","").replace("Automat","").replace("Truck Diesel","")
-			branch = branch.replace("CRT","").replace("Express","").replace("TS","").replace("STD","").lstrip()
+			branch = branch.replace("CRT","").replace("Express","").replace("TS","").replace("STD","").strip()
 
 			print('  <node id="%i" lat="%s" lon="%s">' % (node_id, store['location']['lat'], store['location']['lon']))
 
@@ -206,8 +197,6 @@ if __name__ == '__main__':
 
 			# Get station type
 
-			station_country = None
-
 			for station_type in store['stationTypes']:
 				if station_type.find("automat") >= 0:
 					make_osm_line("automated", "yes")
@@ -216,16 +205,11 @@ if __name__ == '__main__':
 				elif station_type.find("boat") >= 0:
 					make_osm_line("boat", "yes")
 
-				get_country (station_type)
-
 			# Get all fuel types
 
 			fuel_tags = {}
 
 			for fuel_available in store['fuels']:
-
-				get_country (fuel_available)
-
 				for fuel_test in fuels:
 					if fuel_available.find(fuel_test[0]) >= 0:
 						if not(fuel_test[1] in fuel_tags):
@@ -233,9 +217,6 @@ if __name__ == '__main__':
 						break
 
 			for truck_available in store['trucks']:
-
-				get_country (truck_available)
-
 				for fuel_test in fuels:
 					if truck_available.find(fuel_test[0]) >= 0:
 						if not(fuel_test[1] in fuel_tags):
@@ -250,9 +231,6 @@ if __name__ == '__main__':
 			service_tags = {}
 
 			for service_available in store['services']:
-
-				get_country (service_available)
-
 				for service_test in services:
 					if service_available.find(service_test[0]) >= 0:
 						if not(service_test[1] in service_tags):
@@ -265,13 +243,11 @@ if __name__ == '__main__':
 			# Tag country after lookups (guess Sweden if empty)
 			# Find county from looking up postal code translation, first two digits
 
-			if station_country:
-				make_osm_line("COUNTRY", station_country.title())
-				if station_country == "norway":
-					if municipality_id[int(store['postcode'])]:
-						make_osm_line("COUNTY", county_names[ municipality_id[ int(store['postcode']) ][0:2] ])
-			else:
-				make_osm_line("COUNTRY", "Sweden")
+			station_country = country_name[ store['countryCode'] ]
+			make_osm_line("COUNTRY", station_country)
+			if station_country == "Norway":
+				if municipality_id[int(store['postcode'])]:
+					make_osm_line("COUNTY", county_names[ municipality_id[ int(store['postcode']) ][0:2] ])
 
 			# Contact tags
 
@@ -282,7 +258,7 @@ if __name__ == '__main__':
 			if 'telephone' in store:
 				if store['telephone']:
 					if station_country:
-						make_osm_line("phone", countries[station_country] + " " + store['telephone'])
+						make_osm_line("phone", country_prefix[station_country] + " " + store['telephone'])
 					else:
 						make_osm_line("phone", store['telephone'])
 
