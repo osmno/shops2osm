@@ -13,7 +13,7 @@ import sys
 import urllib2
 
 
-version = "0.2.0"
+version = "0.2.1"
 
 
 transform = [
@@ -37,7 +37,8 @@ transform = [
 	('Treschowsgate', 'Treschows gate'),
 	('Tordenskjoldsgate', 'Tordenskjolds gate'),
 	('Tryggvasonsgate', 'Tryggvasons gate'),
-	('HovE39', 'Hov E39'),
+	('Hove39', 'Hov E39'),
+	('Oti', 'OTI'),
 	(u'Øst', u'øst'),
 	(u'Sør', u'sør')
 ]
@@ -103,6 +104,7 @@ if __name__ == '__main__':
 
 			if name == name.upper():
 				name = name[0] + name[1:].lower()
+			name = name.title()
 
 			for word in transform:
 				name = name.replace(word[0], word[1])
