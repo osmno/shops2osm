@@ -14,7 +14,7 @@ import sys
 import urllib2
 
 
-version = "0.3.0"
+version = "0.4.0"
 
 
 transform = [
@@ -139,10 +139,14 @@ if __name__ == '__main__':
 
 			if not(attr['value'] in ["STENGT", " "]):
 				for day in range(7):
-					if attr['name'] == "Open" + days[day]:
-						hours[day] = attr['value'] + "-" + hours[day]
-					elif attr['name'] == "Close" + days[day]:
-						hours[day] = hours[day] + attr['value']
+					if attr['name'] == "Open" + days[day] or attr['name'] == "Close" + days[day]:
+						hours_value = attr['value'].replace(".", ":").replace("_", ":")
+						if hours_value[-2] == ":":  # Missing zero at end
+							hours_value += "0"
+						if attr['name'] == "Open" + days[day]:
+							hours[day] = hours_value + "-" + hours[day]
+						elif attr['name'] == "Close" + days[day]:
+							hours[day] = hours[day] + hours_value
 
 		# Loop through all sequences of opening hours to simplify
 
@@ -190,3 +194,4 @@ if __name__ == '__main__':
 	# Produce OSM file footer
 
 	print('</osm>')
+	
