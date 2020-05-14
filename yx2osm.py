@@ -15,7 +15,7 @@ import urllib2
 from bs4 import BeautifulSoup
 
 
-version = "0.4.0"
+version = "0.5.0"
 
 services = {
 	'AdBlue': 'fuel:adblue',
@@ -93,7 +93,18 @@ if __name__ == '__main__':
 		store_data = datasoup.find('body').find(class_='page').find('main').find('div').find('div').find('div').find('section')['data-stations']
 		store_data = json.loads(store_data.replace("&quot;",'"').replace("&amp;","&"))
 
+	# Identify duplicate refs
+
 	refs = []
+	duplicates = []
+
+	for entry in store_data:
+		store = entry['data']
+		ref = str(store['id'])
+		if ref in refs:
+			duplicates.append(ref)
+		else:
+			refs.append(ref)
 
 	# Produce OSM file header
 
@@ -123,6 +134,8 @@ if __name__ == '__main__':
 			brand = "YX"
 		elif name[0:5] == "Uno-X":
 			brand = "Uno-X"
+		elif name[0:5] == "Preem":
+			brand = "Preem"
 		else:
 			brand = ""
 
@@ -134,15 +147,13 @@ if __name__ == '__main__':
 				name = name.replace(word[0], word[1])
 		name = name.replace("  "," ").strip()
 
-		branch = name.replace("YX ","").replace("Uno-X ","").replace("Truck ","")
+		branch = name.replace("YX ","").replace("Uno-X ","").replace("Truck ","").replace("Preem ","")
 
 		# Avoid duplicate refs
 
 		ref = str(store['id'])
-		if ref in refs:
-			ref += "B"
-		else:
-			refs.append(ref)
+		if ref in duplicates:
+			ref += branch[0:2].upper()
 
 		# Produce station tags
 
