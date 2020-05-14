@@ -15,7 +15,7 @@ import csv
 import urllib2
 import sys
 
-version = "0.5.0"
+version = "0.6.0"
 
 services = [
 	('Bilvask', 'car_wash'),
@@ -63,7 +63,8 @@ if __name__ == '__main__':
 
 	else:
 
-		link = "https://www.essofuelfinder.no/nb-no/api/v1/Retail/retailstation/GetStationsByBoundingBox?latitude1=74&longitude1=-3&latitude2=55&longitude2=38"
+		link = "https://www.essofuelfinder.no/nb-NO/api/locator/Locations?Latitude1=55&Latitude2=74&Longitude1=-3&Longitude2=38&DataSource=RetailGasStations&Country=NO"
+#		link = "https://www.essofuelfinder.no/nb-no/api/v1/Retail/retailstation/GetStationsByBoundingBox?latitude1=74&longitude1=-3&latitude2=55&longitude2=38"
 		header = {
 			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15",
 			"X-Requested-With": "XMLHttpRequest"
@@ -106,7 +107,7 @@ if __name__ == '__main__':
 
 	for store in store_data:
 
-		if store['LocationID'] != "100358172":  # Office, not fuel station
+		if store['LocationID'] != "100358172nb":  # Office, not fuel station
 
 			node_id -= 1
 
@@ -117,13 +118,15 @@ if __name__ == '__main__':
 			if store['DisplayName']:
 				name = store['DisplayName'].encode("utf-8").decode("utf-8")
 				name = name.replace("2","").replace("3","").title()
-			elif store['LocationID'] == "100356373":
+			elif store['LocationID'] == "100356373nb":
 				name = "Grubhei"
+			elif store['LocationID'] == "100361506nb":
+				name = "Voll"
 			else:
 				name = ""
 
 			make_osm_line("amenity", "fuel")
-			make_osm_line("ref:esso", store['LocationID'])
+			make_osm_line("ref:esso", store['LocationID'].replace("nb", ""))
 			make_osm_line("name", "Esso " + name)
 			make_osm_line("branch", name)
 			make_osm_line("brand", "Esso")
@@ -138,7 +141,7 @@ if __name__ == '__main__':
 			service_debug = []
 
 			for service in store['StoreAmenities'] + store['FeaturedItems']:
-				service_name = service['Name'].encode("utf-8").decode("utf-8")
+				service_name = service['Title'].encode("utf-8").decode("utf-8")
 				service_debug.append(service_name)
 
 				for service_test in services:
@@ -196,4 +199,3 @@ if __name__ == '__main__':
 	# Produce OSM file footer
 
 	print('</osm>')
-	
