@@ -16,7 +16,7 @@ import re
 import urllib2
 
 
-version = "0.4.0"
+version = "0.5.1"
 
 brands = {
 	'hyper': {'name': 'Obs', 'shop': 'supermarket'},
@@ -84,21 +84,21 @@ def make_osm_line(key,value):
 if __name__ == '__main__':
 
 	# Read all data into memory
-	# Two parts to limit number of stores per call, divded at latitude 65
+	# Two parts to limit number of stores per call, divded at latitude 61 (roughly 50/50 split)
 
 	header = {
 		"X-Requested-With": "XMLHttpRequest",
 		"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
 		}
 
-	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=65.0&lonNw=4.0&latSe=57.0&lonSe=32.0&chainId=999"
+	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=61.0&lonNw=4.0&latSe=57.0&lonSe=32.0&chainId=999"
 
 	request = urllib2.Request(link, headers=header)
 	file = urllib2.urlopen(request)
 	store_data1 = json.load(file)
 	file.close()
 
-	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=72.0&lonNw=4.0&latSe=65.0&lonSe=32.0&chainId=999"
+	link = "https://coop.no/StoreService/StoresByBoundingBox?locationLat=59.9&locationLon=10.9&latNw=72.0&lonNw=4.0&latSe=61.0&lonSe=32.0&chainId=999"
 
 	request = urllib2.Request(link, headers=header)
 	file = urllib2.urlopen(request)
@@ -189,7 +189,9 @@ if __name__ == '__main__':
 
 		for day in store['OpeningHours']:
 			if not(day['Closed']):
-				hours[days.index(day['Weekday'])] = day['OpenString'][0:5] + day['OpenString'][8:14].replace("-00:00", "-24:00")
+				open_list = day['OpenString'].split("-")
+				hours[days.index(day['Day'])] = open_list[0][0:5] + "-" + open_list[1][0:5].replace("00:00", "24:00")
+
 
 		# Loop through all sequences of opening hours to simplify
 
