@@ -4,7 +4,6 @@
 # circlek2osm
 # Converts Circle K and Best fuel stations from json file to osm format for import/update
 # Usage: circlek2osm [input_filename.json] > output_filename.osm
-# Default input file name are "circlek.json" (copied from the html page)
 # Reads postal/municipality codes from Posten
 
 
@@ -17,7 +16,7 @@ import urllib2
 from datetime import datetime
 
 
-version = "0.3.0"
+version = "0.3.1"
 
 fuels = {
 	'17': 'adblue',  # AdBlue
@@ -35,15 +34,15 @@ fuels = {
 }
 
 services = {
-	'1': 'car:rental',
-	'2': 'trailer:rental',
-	'5': 'hgv',
-	'7': 'car_wash',
-	'8': 'car_wash',
-	'9': 'hgv',
-	'51': 'fuel:propane',
-	'15': 'internet_access',
-	'59': 'hgv'
+	'1': 'car:rental',  # Car rental
+	'2': 'trailer:rental',  # Trailer rental
+	'5': 'hgv',  # TruckDiesel network
+	'7': 'car_wash',  # Car wash
+	'8': 'car_wash',  # Car wash jetwash
+	'9': 'hgv',  # Truck parking
+	'51': 'fuel:propane',  # Gas
+	'15': 'internet_access',  # Wifi
+	'59': 'hgv'  # Truckers club
 }
 
 transform = [
