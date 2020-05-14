@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf8
 
-# europris2osm v0.1.0
+# europris2osm
 # Converts Apotek 1 pharmacies from json to osm format for import/update
 # Usage: apotek12osm [input_filename.json] > output_filename.osm
 # Loads json data from Apotek1 website unless an input file name is given
