@@ -14,7 +14,7 @@ import urllib2
 from xml.etree import ElementTree
 
 
-version = "0.3.0"
+version = "0.4.0"
 
 
 transform_name = [
@@ -120,13 +120,13 @@ def opening_hours(hours):
 		for day_in, day_out in day_conversion.items():
 			result = result.replace(day_in, day_out)
 
-		result = result.replace("00",":00")
-		result = result.replace(":000","0:00")
-		result = result.replace("30",":30")
-		result = result.replace(":300","0:30")
-		result = result.replace(".:",":")
 		result = result.replace(".",":")
+		result = result.replace("00:01","00:00")
+		result = result.replace("23:58","24:00")
 		result = result.replace("23:59","24:00")
+
+		if result == "Mo-Su 00:00-24:00":
+			result = "24/7"
 
 		return result
 
@@ -162,9 +162,10 @@ if __name__ == '__main__':
 
 	for office in root.iterfind('ns0:EnhetDTO', ns):
 
-		if (office.find('ns0:PostnrBesoksadresse/ns0:Land/ns0:Kode', ns).text == "NO") and \
+		if (office.find('ns0:PostnrBesoksadresse/ns0:Land/ns0:Kode', ns) != None) and \
+			(office.find('ns0:PostnrBesoksadresse/ns0:Land/ns0:Kode', ns).text == "NO") and \
 			(office.find('ns0:Status/ns0:Navn', ns).text == "Aktiv") and \
-			(office.find('ns0:EnhetsType/ns0:EnhetsType', ns).text != "27"):  # Avoid automats
+			(office.find('ns0:EnhetsType/ns0:EnhetsType', ns).text not in ["27", "36"]):  # Avoid automats
 
 			node_id -= 1
 
@@ -227,7 +228,7 @@ if __name__ == '__main__':
 				operator = "Posten"
 
 			elif office_type == "27":  # Pakkeautomat
-				name = name.replace('Post i Butik', 'post i butik')
+				name = name.replace('Post i Butikk', 'post i butikk')
 				operator = ""
 				make_osm_line("post_office:type", "parcel_automat")
 
@@ -236,6 +237,10 @@ if __name__ == '__main__':
 
 			elif office_type == "33":  # Postpunkt
 				alt_name = operator + " postpunkt"
+
+			elif office_type == "37":  # Pakkeboks
+				make_osm_line("post_office:type", "parcel_automat")
+				operator = "Posten"
 
 			elif office_type == "1":  # Bedriftsenter
 				operator = "Posten"
@@ -261,7 +266,9 @@ if __name__ == '__main__':
 
 			# Opening hours
 
-			make_osm_line("opening_hours", opening_hours(office.find('ns0:Apningstider/ns0:ApningstidDTO/ns0:ApningstidCSV', ns).text))
+			hours = office.find('ns0:Apningstider/ns0:ApningstidDTO/ns0:ApningstidCSV', ns).text
+#			make_osm_line("HOURS", "%s" % hours)
+			make_osm_line("opening_hours", opening_hours(hours))
 
 			# Done with OSM office node
 
