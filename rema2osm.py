@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf8
 
-# rema2osm v0.2.0
+# rema2osm
 # Converts Rema 1000 stores from Rema API or JSON file to OSM format for import/update
 # Usage: rema2osm [input_filename.json] > output_filename.osm
 # Loads store data from Rema API
@@ -13,7 +13,7 @@ import sys
 import urllib2
 
 
-version = "0.2.1"
+version = "0.2.2"
 
 
 transform = [
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
 			# Fix name
 
-			name = store['shortName'].lstrip()
+			name = store['shortName'].rstrip("*").lstrip()
 
 			if name == name.upper():
 				name = name[0] + name[1:].lower()
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 			hours = ["", "", "", "", "", "", ""]
 
 			for day, time in store['openingHours'].items():
-				if day in days:
+				if day in days and time != "Stengt":
 					hours[days.index(day)] = time.replace(u"–","-")
 
 
