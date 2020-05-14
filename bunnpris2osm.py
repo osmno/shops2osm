@@ -16,7 +16,7 @@ import csv
 import re
 
 
-version = "0.2.0"
+version = "0.2.1"
 
 transform = [
 	('Brygge', 'brygge'),
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
 		node_id -= 1
 
-		print('  <node id="%i" lat="%f" lon="%f">' % (node_id, store['data-poslat'], store['data-poslng']))
+		print('  <node id="%i" lat="%s" lon="%s">' % (node_id, store['data-poslat'], store['data-poslng']))
 
 		name = store['data-name'].strip()
 		for word in transform:
